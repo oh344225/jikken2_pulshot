@@ -149,7 +149,17 @@ class ViewController: UIViewController, UITextFieldDelegate {
 			
 			//取得したサンプルを単位に合わせる
 			DispatchQueue.main.async {
-				self.myReadHeartRateField.text = "\(myRecentSample.quantity)"
+				
+				let count:HKUnit = HKUnit.count()
+				let minute: HKUnit = HKUnit.minute()
+				let countPerMinute:HKUnit = count.unitMultiplied(by: minute.reciprocal())
+				
+				var bpm = myRecentSample.quantity.doubleValue(for: countPerMinute)
+				
+				//var pulsepersec = myRecentSample.quantity
+				//var pulse = pulsepersec * 60
+				print(bpm)
+				self.myReadHeartRateField.text = "\(bpm)"
 
 			}
 		}
@@ -161,7 +171,23 @@ class ViewController: UIViewController, UITextFieldDelegate {
 	
 	//データ書き込み関数
 	private func writeData(HeartRate:Double){
-		
+		// 登録用データタイプを生成.
+		let typeOfHeartRate = HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.heartRate)
+		// 単位とセットのデータを生成.
+		let count = HKUnit.count()
+		let minute = HKUnit.minute()
+		let countParMinute = count.unitMultiplied(by: minute.reciprocal())
+		let myHeartRate = HKQuantity(unit:countParMinute, doubleValue: HeartRate)
+		// StoreKit保存用データを作成.
+		let myHeartRateData = HKQuantitySample(type: typeOfHeartRate!, quantity: myHeartRate, start: Date(), end: Date())
+		// HealthStoreにデータを保存.
+		myHealthStore.save(myHeartRateData, withCompletion: {success, error in
+			if let e = error {
+				print("Error: \(e.localizedDescription)")
+				return
+			}
+			print(success ? "Success" : "Failure")
+		})
 	}
 	
 
